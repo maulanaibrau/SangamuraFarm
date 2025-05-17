@@ -1,4 +1,4 @@
-from shiny import App, ui, render
+from shiny import App, ui, render, reactive
 import pandas as pd
 import numpy as np
 import plotly.express as px
@@ -31,7 +31,6 @@ df = load_data()
 
 # Define UI
 app_ui = ui.page_fluid(
-    # shinyswatch.theme.superhero(),
     ui.tags.style("""
         .value-box {
             border-radius: 10px;
@@ -60,13 +59,26 @@ app_ui = ui.page_fluid(
     ui.layout_sidebar(
         ui.sidebar(
             ui.h3("Weather Data Controls"),
-            ui.input_slider(
-                "datetime_slider",
-                "Select Date/Time:",
-                min=0,
-                max=len(df) - 1,
-                value=0,
-                step=1
+            # ui.input_slider(
+            #     "datetime_slider",
+            #     "Select Date/Time:",
+            #     min=0,
+            #     max=len(df) - 1,
+            #     value=0,
+            #     step=1
+            # ),
+            ui.input_date(
+                "selected_date",
+                "Select Date:",
+                value=df['datetime'].dt.date.min(),
+                min=df['datetime'].dt.date.min(),
+                max=df['datetime'].dt.date.max(),
+            ),
+            ui.input_select(
+                "selected_time",
+                "Select Time:",
+                choices=[t.strftime('%H:%M') for t in sorted(df['datetime'].dt.time.unique())],
+                selected=df['datetime'].dt.time.min().strftime('%H:%M')
             ),
             ui.output_text("selected_datetime"),
             width="300px"
@@ -129,16 +141,26 @@ app_ui = ui.page_fluid(
 
 # Define server
 def server(input, output, session):
+    @reactive.Calc
+    def selected_index():
+        selected_date = input.selected_date()
+        selected_time = input.selected_time()
+        datetime_str = f"{selected_date} {selected_time}"
+        target_datetime = pd.to_datetime(datetime_str)
+        return df['datetime'].sub(target_datetime).abs().idxmin()
+
     @output
     @render.text
     def selected_datetime():
-        idx = input.datetime_slider()
+        # idx = input.datetime_slider()
+        idx = selected_index()
         return f"Selected: {df.iloc[idx]['datetime'].strftime('%Y-%m-%d %H:%M')}"
     
     @output
     @render.ui
     def value_boxes():
-        idx = input.datetime_slider()
+        # idx = input.datetime_slider()
+        idx = selected_index()
         selected_data = df.iloc[idx]
         
         temperature = selected_data['temperature'] if not pd.isna(selected_data['temperature']) else "N/A"
@@ -237,7 +259,8 @@ def server(input, output, session):
         )
         
         # Add marker for selected point
-        idx = input.datetime_slider()
+        # idx = input.datetime_slider()
+        idx = selected_index()
         selected_time = df.iloc[idx]['datetime']
         selected_temp = df.iloc[idx]['temperature']
         
@@ -274,7 +297,8 @@ def server(input, output, session):
         )
         
         # Add marker for selected point
-        idx = input.datetime_slider()
+        # idx = input.datetime_slider()
+        idx = selected_index()
         selected_time = df.iloc[idx]['datetime']
         selected_rain = df.iloc[idx]['rainfall_1hour']
         
@@ -312,7 +336,8 @@ def server(input, output, session):
         )
         
         # Add marker for selected point
-        idx = input.datetime_slider()
+        # idx = input.datetime_slider()
+        idx = selected_index()
         selected_time = df.iloc[idx]['datetime']
         selected_humidity = df.iloc[idx]['humidity']
         
@@ -349,7 +374,8 @@ def server(input, output, session):
         )
         
         # Add marker for selected point
-        idx = input.datetime_slider()
+        # idx = input.datetime_slider()
+        idx = selected_index()
         selected_time = df.iloc[idx]['datetime']
         selected_light = df.iloc[idx]['light']
         
@@ -387,7 +413,8 @@ def server(input, output, session):
         )
         
         # Add marker for selected point
-        idx = input.datetime_slider()
+        # idx = input.datetime_slider()
+        idx = selected_index()
         selected_time = df.iloc[idx]['datetime']
         selected_pressure = df.iloc[idx]['atmospheric_pressure']
         
@@ -436,7 +463,8 @@ def server(input, output, session):
                 )
         
         # Add marker for selected point
-        idx = input.datetime_slider()
+        # idx = input.datetime_slider()
+        idx = selected_index()
         selected_time = df.iloc[idx]['datetime']
         selected_speed = df.iloc[idx]['wind_speed']
         
@@ -482,7 +510,8 @@ def server(input, output, session):
     # Gauge for temperature on All tab
     @render_widget
     def temperature_gauge():
-        idx = input.datetime_slider()
+        # idx = input.datetime_slider()
+        idx = selected_index()
         temp = df.iloc[idx]['temperature']
         
         fig = go.Figure(go.Indicator(
@@ -513,7 +542,8 @@ def server(input, output, session):
     # Gauge for humidity on All tab
     @render_widget
     def humidity_gauge():
-        idx = input.datetime_slider()
+        # idx = input.datetime_slider()
+        idx = selected_index()
         humidity = df.iloc[idx]['humidity']
         
         fig = go.Figure(go.Indicator(
@@ -543,7 +573,8 @@ def server(input, output, session):
     # Gauge for pressure on All tab
     @render_widget
     def pressure_gauge():
-        idx = input.datetime_slider()
+        # idx = input.datetime_slider()
+        idx = selected_index()
         pressure = df.iloc[idx]['atmospheric_pressure']
         
         fig = go.Figure(go.Indicator(
@@ -573,7 +604,8 @@ def server(input, output, session):
     # Wind rose on All tab
     @render_widget
     def wind_rose():
-        idx = input.datetime_slider()
+        # idx = input.datetime_slider()
+        idx = selected_index()
         wind_dir = df.iloc[idx]['wind_direction']
         wind_speed = df.iloc[idx]['wind_speed'] if not pd.isna(df.iloc[idx]['wind_speed']) else 0
         

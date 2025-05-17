@@ -1,4 +1,4 @@
-## How to Run This Project
+## Sangamura Farm Data Visualization
 
 Sangamura Farm is a data visualization project featuring a Shiny app designed to help users explore and analyze key environmental metrics collected from the farm. The application provides interactive dashboards and visualizations for:
 
