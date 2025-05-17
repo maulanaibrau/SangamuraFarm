@@ -1,0 +1,8 @@
+shiny @ git+https://github.com/posit-dev/py-shiny@main
+pandas
+numpy
+matplotlib
+plotly
+seaborn
+shinywidgets
+htmltools
